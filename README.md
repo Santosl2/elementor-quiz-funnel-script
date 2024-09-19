@@ -12,21 +12,21 @@ Este projeto é para ser utilizado em Quiz Funnel, onde o usuário responde perg
 
 - [x] Fácil de integrar com qualquer página HTML
 
-- [] Manter os UTM's
+- [ ] Manter os UTM's
 
-- [] Pontuação
+- [ ] Pontuação
 
-- [] Multiplas perguntas
+- [ ] Multiplas perguntas
 
-- [] Redirecionamento para página de vendas
+- [ ] Redirecionamento para página de vendas
 
-- [] Integração com Facebook Pixel
+- [ ] Integração com Facebook Pixel
 
-- [] Integração com Google Analytics
+- [ ] Integração com Google Analytics
 
-- [] Integração com Google Tag Manager
+- [ ] Integração com Google Tag Manager
 
-- [] Integração com Google Ads
+- [ ] Integração com Google Ads
 
 ### Tech Stack
 
