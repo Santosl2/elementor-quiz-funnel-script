@@ -5,6 +5,11 @@ export default {
     selectedOption: String,
   },
 
+  setup() {
+    const store = Vuex.useStore();
+    return { store };
+  },
+
   template: `
   <div>
         <h1 class="text-2xl font-bold text-gray-800">{{question.title}}</h1>
@@ -22,6 +27,7 @@ export default {
             :value="option.id"
           />
           {{ option.text }}
+           {{ store.state.answers.get(question.id)?.includes(option.id) ? '✅' : '' }}
            
         </label>
 
