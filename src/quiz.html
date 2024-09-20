@@ -4,7 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Exemplo de Quiz</title>
+
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script
+      src="https://unpkg.com/vuex@4.1.0/dist/vuex.global.js"
+      async
+    ></script>
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
   <body
@@ -40,7 +45,8 @@
         class="px-4 border rounded-md px-4 py-10 space-y-3"
         v-on:submit.prevent="handleSubmit"
       >
-        <div v-for="question in questions" :key="question.id">
+        {{currentQuestion}}
+        <div v-for="question in store.state.questions" :key="question.id">
           <question-item
             :on-answer="handleAnswerMessage"
             :question="question"
@@ -61,44 +67,46 @@
 
   <script type="module">
     const { createApp, ref, computed } = Vue;
+
     import questionItem from "./components/QuestionItem.js";
-    import { questions, config } from "./data/questions.js";
+    import { store } from "./store.js";
 
     const app = createApp({
       setup() {
-        const currentQuestion = ref(1);
-        const totalQuestions = ref(questions.length);
-        const answers = ref(new Map());
+        const currentQuestion = computed(() => store.state.currentQuestion);
+        const totalQuestions = computed(() => store.state.totalQuestions);
+        const answers = computed(() => store.state.answers);
         const progress = computed(() => {
           return (currentQuestion.value / totalQuestions.value) * 100;
         });
-        const score = ref(0);
+        const score = computed(() => store.state.score);
 
         const handleAnswerMessage = (questionId, answer) => {
-          const question = questions.find((q) => q.id === questionId);
+          const question = store.state.questions.find(
+            (q) => q.id === questionId
+          );
           const option = question.options.find((o) => o.id === answer);
+          const answers = store.state.answers;
 
           if (option && "points" in option) {
-            score.value += option.points;
+            store.commit("increamentScore", option.points);
           }
 
-          console.log("Resposta da pergunta", questionId, ":", question);
-
           function handleWithMultipleQuestion() {
-            const currentAnswer = answers.value.get(questionId) || [];
+            const currentAnswer = answers.get(questionId) || [];
 
             if (currentAnswer.includes(answer)) {
               const newAnswer = currentAnswer.filter((a) => a !== answer);
-              answers.value.set(questionId, newAnswer);
+              answers.set(questionId, newAnswer);
               return;
             }
 
             const newAnswer = [...currentAnswer, answer];
-            answers.value.set(questionId, newAnswer);
+            answers.set(questionId, newAnswer);
           }
 
           function handleWithSingleQuestion() {
-            answers.value.set(questionId, answer);
+            answers.set(questionId, answer);
             handleSubmit();
           }
 
@@ -110,26 +118,28 @@
         };
 
         const handleSubmit = () => {
-          if (answers.value.size >= totalQuestions.value) {
+          if (answers >= totalQuestions.value) {
             console.log("Todas as perguntas foram respondidas");
           } else {
-            currentQuestion.value++;
+            store.commit("nextQuestion");
           }
         };
 
         return {
-          handleAnswerMessage,
           currentQuestion,
+          store,
+          score,
           totalQuestions,
-          questions,
-          config,
+          config: store.state.config,
           progress,
           answers,
+          handleAnswerMessage,
           handleSubmit,
         };
       },
     });
 
+    app.use(store);
     app.component("question-item", questionItem);
     app.mount("#app");
   </script>
