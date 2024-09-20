@@ -11,27 +11,30 @@
     class="bg-gray-200 flex justify-center items-center h-screen flex-1 w-full flex-col"
     id="app"
   >
-    <section class="max-w-md w-full text-center space-y-10">
-      <h1 class="text-4xl font-bold text-gray-800 text-balanced">
-        Quiz exemplo
-      </h1>
+    <section
+      class="max-w-md w-full text-center space-y-10 p-3 flex justify-between flex-col"
+    >
+      <div class="space-y-3">
+        <h1 class="text-4xl font-bold text-gray-800 text-balanced">
+          {{config.quizName}}
+        </h1>
 
-      <div
-        class="flex w-full h-1.5 bg-green-400/20 rounded-full overflow-hidden"
-        role="progressbar"
-        :aria-valuenow="progress"
-        aria-valuemin="0"
-        aria-valuemax="100"
-      >
         <div
-          :data-progress="progress"
-          class="flex flex-col justify-center rounded-full overflow-hidden bg-green-400 text-xs text-white text-center whitespace-nowrap transition duration-500"
-          :style="{
+          class="flex w-full h-1.5 bg-green-400/20 rounded-full overflow-hidden"
+          role="progressbar"
+          :aria-valuenow="progress"
+          aria-valuemin="0"
+          aria-valuemax="100"
+        >
+          <div
+            :data-progress="progress"
+            class="flex flex-col justify-center rounded-full overflow-hidden bg-green-400 text-xs text-white text-center whitespace-nowrap transition duration-500"
+            :style="{
             width: `${progress}%`,
           }"
-        ></div>
+          ></div>
+        </div>
       </div>
-
       <form
         id="quiz"
         class="px-4 border rounded-md px-4 py-10 space-y-3"
@@ -41,11 +44,12 @@
           <question-item
             :on-answer="handleAnswerMessage"
             :question="question"
+            :selected-option="answers.get(question.id)"
             v-if="currentQuestion === question.id"
           />
         </div>
 
-        <div v-if="currentQuestion >= totalQuestions">
+        <div v-if="currentQuestion > totalQuestions">
           <h2 class="text-xl font-semibold text-center">Resultado</h2>
           <p class="text-center">
             Você acertou {{ SCORE }} de {{ totalQuestions }} perguntas
@@ -58,33 +62,12 @@
   <script type="module">
     const { createApp, ref, computed } = Vue;
     import questionItem from "./components/QuestionItem.js";
+    import { questions, config } from "./data/questions.js";
 
     const app = createApp({
       setup() {
-        const questions = ref([
-          {
-            id: 1,
-            title: "Qual é a capital do Brasil?",
-            options: [
-              { id: "a", text: "São Paulo", points: 0 },
-              { id: "b", text: "Rio de Janeiro", points: 0 },
-              { id: "c", text: "Brasília", points: 4 },
-              { id: "d", text: "Salvador", points: 0 },
-            ],
-          },
-          {
-            id: 2,
-            title: "Qual é a capital do Brasil 2?",
-            options: [
-              { id: "a", text: "São Paulo", points: 0 },
-              { id: "b", text: "Rio de Janeiro", points: 0 },
-              { id: "c", text: "Brasília", points: 4 },
-              { id: "d", text: "Salvador", points: 0 },
-            ],
-          },
-        ]);
         const currentQuestion = ref(1);
-        const totalQuestions = ref(questions.value.length);
+        const totalQuestions = ref(questions.length);
         const answers = ref(new Map());
         const progress = computed(() => {
           return (currentQuestion.value / totalQuestions.value) * 100;
@@ -92,14 +75,38 @@
         const score = ref(0);
 
         const handleAnswerMessage = (questionId, answer) => {
-          const question = questions.value.find((q) => q.id === questionId);
-          const answerPoints = question.options.find(
-            (o) => o.id === answer
-          ).points;
+          const question = questions.find((q) => q.id === questionId);
+          const option = question.options.find((o) => o.id === answer);
 
-          score.value += answerPoints;
-          answers.value.set(questionId, answer);
-          handleSubmit();
+          if (option && "points" in option) {
+            score.value += option.points;
+          }
+
+          console.log("Resposta da pergunta", questionId, ":", question);
+
+          function handleWithMultipleQuestion() {
+            const currentAnswer = answers.value.get(questionId) || [];
+
+            if (currentAnswer.includes(answer)) {
+              const newAnswer = currentAnswer.filter((a) => a !== answer);
+              answers.value.set(questionId, newAnswer);
+              return;
+            }
+
+            const newAnswer = [...currentAnswer, answer];
+            answers.value.set(questionId, newAnswer);
+          }
+
+          function handleWithSingleQuestion() {
+            answers.value.set(questionId, answer);
+            handleSubmit();
+          }
+
+          if (!question.isMultiple) {
+            return handleWithSingleQuestion();
+          }
+
+          return handleWithMultipleQuestion();
         };
 
         const handleSubmit = () => {
@@ -115,7 +122,9 @@
           currentQuestion,
           totalQuestions,
           questions,
+          config,
           progress,
+          answers,
           handleSubmit,
         };
       },
